@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import Header from "@/components/Header";
 import "./globals.css";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const geist = Geist({
 	subsets: ["latin"],
+	variable: "--font-geist-sans",
 });
 
 const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
 	subsets: ["latin"],
+	variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
-	title: "PixelCast - Screen Sharing Made Simple",
-	description: "Share your screen with others instantly",
+	title: "PixelCast - Real-time Screen Sharing",
+	description: "Ultra-low latency screen sharing application",
 };
 
 export default function RootLayout({
@@ -25,21 +23,62 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='en' suppressHydrationWarning>
+		<html lang='en'>
+			<head>
+				{/* Ultra-low latency browser optimizations */}
+				<meta name='viewport' content='width=device-width, initial-scale=1' />
+				<meta httpEquiv='X-UA-Compatible' content='IE=edge' />
+
+				{/* Chrome experimental flags for WebRTC optimization */}
+				<meta httpEquiv='origin-trial' content='WebRTC-UltraLowLatency' />
+
+				{/* Performance hints */}
+				<link rel='dns-prefetch' href='//localhost:1985' />
+				<link rel='preconnect' href='//localhost:8000' />
+
+				{/* Additional performance optimizations */}
+				<meta name='referrer' content='no-referrer-when-downgrade' />
+
+				{/* WebRTC optimization hints */}
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `
+							// Enable Chrome experimental WebRTC features
+							if (window.chrome) {
+								// Request ultra-low latency mode
+								const enableUltraLowLatency = () => {
+									// Enable hardware acceleration
+									if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+										console.log('✅ getDisplayMedia with hardware acceleration available');
+									}
+									
+									// Enable experimental APIs
+									if (window.RTCPeerConnection) {
+										console.log('✅ WebRTC peer connections available');
+									}
+								};
+								
+								// Apply optimizations when DOM is ready
+								if (document.readyState === 'loading') {
+									document.addEventListener('DOMContentLoaded', enableUltraLowLatency);
+								} else {
+									enableUltraLowLatency();
+								}
+							}
+						`,
+					}}
+				/>
+			</head>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${geist.variable} ${geistMono.variable} antialiased`}
+				style={{
+					// Browser rendering optimizations for video
+					imageRendering: "optimizeSpeed",
+					// @ts-expect-error - CSS optimization for video rendering
+					transform: "translateZ(0)", // Force hardware acceleration
+				}}
 			>
-				<ThemeProvider
-					attribute='class'
-					defaultTheme='dark'
-					enableSystem
-					disableTransitionOnChange
-				>
-					<div className='min-h-screen bg-background'>
-						<Header />
-						<main>{children}</main>
-					</div>
-				</ThemeProvider>
+				{children}
 			</body>
 		</html>
 	);

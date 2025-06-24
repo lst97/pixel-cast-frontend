@@ -1,107 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccessToken, VideoGrant } from "livekit-server-sdk";
+import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 
 // Configuration from environment variables
-const config = {
-	apiKey: process.env.LIVEKIT_API_KEY,
-	apiSecret: process.env.LIVEKIT_API_SECRET,
-};
+// Using hardcoded localhost URLs for now - can be made configurable later
 
-// Request body interface
-interface TokenRequest {
-	roomName: string;
-	identity: string;
-	name?: string;
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
 	try {
-		// Validate required configuration
-		if (!config.apiKey || !config.apiSecret) {
-			console.error(
-				"❌ Missing required environment variables: LIVEKIT_API_KEY and LIVEKIT_API_SECRET"
-			);
-			return NextResponse.json(
-				{
-					error: "Server configuration error: Missing LiveKit credentials",
-				},
-				{ status: 500 }
-			);
-		}
+		const { searchParams } = new URL(req.url);
 
-		// Parse request body
-		const body: TokenRequest = await request.json();
+		const roomName = searchParams.get("roomName") || uuidv4();
+		const identity = searchParams.get("identity") || `Guest-${nanoid()}`;
+		const name = searchParams.get("name") || "Guest";
 
-		// Input validation
-		if (
-			!body.roomName ||
-			typeof body.roomName !== "string" ||
-			body.roomName.trim() === ""
-		) {
-			return NextResponse.json(
-				{
-					error:
-						"Missing or invalid 'roomName' field. Must be a non-empty string.",
-				},
-				{ status: 400 }
-			);
-		}
+		const streamKey = `${roomName}/${identity}`;
+		const timestamp = new Date().toISOString();
 
-		if (
-			!body.identity ||
-			typeof body.identity !== "string" ||
-			body.identity.trim() === ""
-		) {
-			return NextResponse.json(
-				{
-					error:
-						"Missing or invalid 'identity' field. Must be a non-empty string.",
-				},
-				{ status: 400 }
-			);
-		}
-
-		// Sanitize inputs
-		const roomName = body.roomName.trim();
-		const identity = body.identity.trim();
-		const name = body.name?.trim() || identity;
-
-		// Create LiveKit access token
-		const at = new AccessToken(config.apiKey, config.apiSecret, {
-			identity: identity,
-			name: name,
-		});
-
-		// Define permissions (VideoGrant)
-		const grant: VideoGrant = {
-			room: roomName,
-			roomJoin: true,
-			canPublish: true, // Allow publishing video/audio
-			canPublishData: true, // Allow publishing data messages
-			canSubscribe: true, // Allow receiving others' streams
+		const token = {
+			roomName,
+			identity,
+			name,
+			streamKey,
+			timestamp,
+			// WHIP/WHEP URLs using proxy endpoints
+			whipUrl: `/api/srs-proxy/whip?app=${encodeURIComponent(
+				roomName
+			)}&stream=${encodeURIComponent(identity)}`,
+			whepUrl: `/api/srs-proxy/whep?app=${encodeURIComponent(
+				roomName
+			)}&stream=${encodeURIComponent(identity)}`,
+			hlsUrl: `http://localhost:8080/${roomName}/${identity}.m3u8`,
+			iceServers: [
+				{ urls: "stun:stun.l.google.com:19302" },
+				{ urls: "stun:stun1.l.google.com:19302" },
+				{ urls: "stun:stun2.l.google.com:19302" },
+			],
 		};
 
-		at.addGrant(grant);
-
-		// Generate JWT token
-		const token = await at.toJwt();
-
-		// Return token
-		return NextResponse.json({ token });
+		return NextResponse.json(token);
 	} catch (error) {
-		console.error("❌ Error generating token:", error);
-
-		// Handle JSON parsing errors
-		if (error instanceof SyntaxError) {
-			return NextResponse.json(
-				{ error: "Invalid JSON in request body" },
-				{ status: 400 }
-			);
-		}
-
-		// Handle other errors
+		console.error("❌ Error generating SRS room access:", error);
 		return NextResponse.json(
-			{ error: "Internal server error while generating token" },
+			{ error: "Internal Server Error" },
 			{ status: 500 }
 		);
 	}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>SSE Connection Test</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				padding: 20px;
+			}
+			.status {
+				padding: 10px;
+				margin: 10px 0;
+				border-radius: 4px;
+			}
+			.connected {
+				background-color: #d4edda;
+				color: #155724;
+			}
+			.connecting {
+				background-color: #fff3cd;
+				color: #856404;
+			}
+			.error {
+				background-color: #f8d7da;
+				color: #721c24;
+			}
+			.log {
+				background-color: #f8f9fa;
+				padding: 10px;
+				margin: 10px 0;
+				border-left: 3px solid #007bff;
+				font-family: monospace;
+				font-size: 12px;
+				white-space: pre-wrap;
+				max-height: 400px;
+				overflow-y: auto;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>SSE Connection Test</h1>
+
+		<div>
+			<label for="roomName">Room Name:</label>
+			<input type="text" id="roomName" value="test-room" />
+			<button onclick="connect()">Connect</button>
+			<button onclick="disconnect()">Disconnect</button>
+		</div>
+
+		<div id="status" class="status connecting">Disconnected</div>
+
+		<h3>Messages:</h3>
+		<div id="messages" class="log">Ready to connect...</div>
+
+		<h3>Stream Data:</h3>
+		<div id="streams" class="log">No streams yet...</div>
+
+		<script>
+			let eventSource = null;
+			let isConnected = false;
+
+			function log(message) {
+				const timestamp = new Date().toISOString();
+				const messagesDiv = document.getElementById("messages");
+				messagesDiv.textContent += `[${timestamp}] ${message}\n`;
+				messagesDiv.scrollTop = messagesDiv.scrollHeight;
+				console.log(message);
+			}
+
+			function updateStatus(status, className) {
+				const statusDiv = document.getElementById("status");
+				statusDiv.textContent = status;
+				statusDiv.className = `status ${className}`;
+			}
+
+			function connect() {
+				if (eventSource) {
+					log("Closing existing connection...");
+					eventSource.close();
+				}
+
+				const roomName = document.getElementById("roomName").value;
+				if (!roomName) {
+					alert("Please enter a room name");
+					return;
+				}
+
+				const url = `/api/srs-proxy/streams/sse?room=${encodeURIComponent(
+					roomName
+				)}`;
+				log(`Connecting to: ${url}`);
+				updateStatus("Connecting...", "connecting");
+
+				eventSource = new EventSource(url);
+
+				eventSource.onopen = function (event) {
+					log("✅ Connection opened!");
+					log(`ReadyState: ${eventSource.readyState}`);
+					updateStatus("Connected", "connected");
+					isConnected = true;
+				};
+
+				eventSource.onmessage = function (event) {
+					log(`📨 Message: ${event.data}`);
+
+					try {
+						const data = JSON.parse(event.data);
+						if (data.type === "streams_update") {
+							const streamsDiv = document.getElementById("streams");
+							streamsDiv.textContent = JSON.stringify(data.streams, null, 2);
+						}
+					} catch (e) {
+						log(`❌ Failed to parse message: ${e.message}`);
+					}
+				};
+
+				eventSource.onerror = function (event) {
+					log(`❌ Connection error: ${JSON.stringify(event)}`);
+					log(`ReadyState: ${eventSource.readyState}`);
+					updateStatus("Error / Reconnecting...", "error");
+					isConnected = false;
+				};
+
+				// Check connection state periodically
+				setTimeout(() => {
+					log(
+						`📊 State after 1s: ${eventSource.readyState} (0=CONNECTING, 1=OPEN, 2=CLOSED)`
+					);
+				}, 1000);
+
+				setTimeout(() => {
+					log(`📊 State after 3s: ${eventSource.readyState}`);
+				}, 3000);
+			}
+
+			function disconnect() {
+				if (eventSource) {
+					log("Disconnecting...");
+					eventSource.close();
+					eventSource = null;
+					updateStatus("Disconnected", "connecting");
+					isConnected = false;
+				}
+			}
+
+			// Auto-connect on page load
+			window.addEventListener("load", () => {
+				setTimeout(connect, 500);
+			});
+		</script>
+	</body>
+</html>

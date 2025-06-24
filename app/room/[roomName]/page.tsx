@@ -1,49 +1,39 @@
 "use client";
 
-import React, { Suspense } from "react";
-import LiveKitRoomWrapper from "@/components/LiveKitRoomWrapper";
+import React from "react";
+import SRSRoomWrapper from "@/components/SRSRoomWrapper";
+import { getPersistentIdentity } from "@/lib/persistentIdentity";
 
 interface RoomPageProps {
-	params: Promise<{ roomName: string }>;
-	searchParams: Promise<{ username?: string }>;
+	params: Promise<{
+		roomName: string;
+	}>;
 }
 
-export default function RoomPage({ params, searchParams }: RoomPageProps) {
-	return (
-		<Suspense
-			fallback={
-				<div className='flex items-center justify-center min-h-screen'>
-					Loading room...
-				</div>
-			}
-		>
-			<RoomPageContent params={params} searchParams={searchParams} />
-		</Suspense>
-	);
+export default function RoomPage(props: RoomPageProps) {
+	return <RoomPageContent params={props.params} />;
 }
 
-function RoomPageContent({ params, searchParams }: RoomPageProps) {
-	const [resolvedParams, resolvedSearchParams] = [
-		React.use(params),
-		React.use(searchParams),
-	];
-
+function RoomPageContent({ params }: RoomPageProps) {
+	const resolvedParams = React.use(params);
 	const roomName = resolvedParams.roomName;
 
-	// Generate a unique username if none provided
-	const username = React.useMemo(() => {
-		if (resolvedSearchParams.username) {
-			return resolvedSearchParams.username;
-		}
-		// Generate unique ID using timestamp + random number
-		const uniqueId =
-			Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-		return `Guest-${uniqueId}`;
-	}, [resolvedSearchParams.username]);
+	// Use persistent identity that remembers the user across page refreshes
+	const userIdentity = React.useMemo(() => {
+		const persistentIdentity = getPersistentIdentity(roomName);
+		console.log(
+			`🔄 Room ${roomName}: Using persistent identity ${persistentIdentity.identity} (${persistentIdentity.displayName})`
+		);
+		return persistentIdentity;
+	}, [roomName]); // Only recalculate if room changes
 
 	return (
 		<div className='container mx-auto px-4 py-4'>
-			<LiveKitRoomWrapper roomName={roomName} username={username} />
+			<SRSRoomWrapper
+				roomName={roomName}
+				username={userIdentity.identity}
+				displayName={userIdentity.displayName}
+			/>
 		</div>
 	);
 }

@@ -18,14 +18,7 @@ export default function Home() {
 		// Generate a unique room ID
 		const roomId = uuidv4();
 
-		// Generate a guest username with timestamp for uniqueness
-		const guestUsername = `Guest-${Date.now().toString(36)}${Math.random()
-			.toString(36)
-			.substr(2, 5)}`;
-
-		router.push(
-			`/room/${roomId}?username=${encodeURIComponent(guestUsername)}`
-		);
+		router.push(`/room/${roomId}`);
 	};
 
 	return (
@@ -36,22 +29,23 @@ export default function Home() {
 				</CardHeader>
 				<CardContent>
 					<div className='text-center space-y-4'>
-						<div className='text-6xl mb-4'>🎥</div>
-						<h2 className='text-xl font-semibold'>Ready to start?</h2>
+						<div className='text-6xl mb-4'>🖥️</div>
+						<h2 className='text-xl font-semibold'>
+							Ready to Share Your Screen?
+						</h2>
 						<p className='text-muted-foreground'>
-							Create a new room and start your video conference instantly.
-							You&apos;ll join as a guest user with camera and microphone
-							disabled by default.
+							Create a new room and start sharing your screen instantly. Perfect
+							for presentations, demos, and collaboration.
 						</p>
 					</div>
 				</CardContent>
 				<CardFooter>
 					<Button
 						onClick={handleCreateRoom}
-						className='w-full bg-green-600 hover:bg-green-700'
+						className='w-full bg-blue-600 hover:bg-blue-700'
 						size='lg'
 					>
-						Create Room
+						Start Screen Sharing
 					</Button>
 				</CardFooter>
 			</Card>
