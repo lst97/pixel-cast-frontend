@@ -54,6 +54,7 @@ import {
 	BASE_RETRY_DELAY,
 } from "./constants";
 import { useStreamSSE } from "./hooks/useStreamSSE";
+import { buildApiUrl, buildApiUrlWithParams, ENDPOINTS } from "@/lib/config";
 
 function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 	// SSE connection for real-time stream updates
@@ -281,9 +282,10 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 
 				await pc.setLocalDescription(offer);
 
-				const whepUrl = `/api/srs-proxy/whep?app=${encodeURIComponent(
-					config.roomName
-				)}&stream=${encodeURIComponent(streamId)}`;
+				const whepUrl = buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.WHEP, {
+					app: config.roomName,
+					stream: streamId,
+				});
 
 				const whepResponse = await fetch(whepUrl, {
 					method: "POST",
@@ -305,9 +307,36 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 					const errorText = await whepResponse.text();
 					console.error(`❌ Failed to subscribe to ${streamId}:`, errorText);
 					pc.close();
+
+					// If we failed and requested audio, try again with video-only
+					if (media.hasAudio && media.hasVideo) {
+						console.log(
+							`🔄 Retrying ${streamId} with video-only (audio might not be available)`
+						);
+						await subscribeToStream(streamId, {
+							hasVideo: true,
+							hasAudio: false,
+						});
+					}
 				}
 			} catch (error) {
 				console.error(`❌ Error subscribing to stream ${streamId}:`, error);
+
+				// Handle specific SDP m-line mismatch error
+				if (
+					error instanceof Error &&
+					error.message.includes("different number of m-lines")
+				) {
+					console.log(
+						`🔄 SDP m-line mismatch detected, retrying ${streamId} with video-only`
+					);
+					if (media.hasAudio) {
+						await subscribeToStream(streamId, {
+							hasVideo: true,
+							hasAudio: false,
+						});
+					}
+				}
 			}
 		},
 		[config.iceServers, config.roomName]
@@ -401,7 +430,7 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 
 			// Check for existing streams and clean them up
 			try {
-				const response = await fetch("/api/srs-proxy/streams");
+				const response = await fetch(buildApiUrl(ENDPOINTS.SRS_PROXY.STREAMS));
 				if (response.ok) {
 					const data = await response.json();
 					const existing = data.streams?.find((s: StreamInfo) =>
@@ -411,7 +440,9 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 					if (existing?.publish?.active) {
 						console.log("🧹 Cleaning up existing stream...");
 						await fetch(
-							`/api/srs/stop?stream=${encodeURIComponent(existing.name)}`,
+							buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.STREAMS_STOP, {
+								stream: existing.name,
+							}),
 							{ method: "POST" }
 						);
 						await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait longer for cleanup
@@ -569,9 +600,10 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 			await pc.setLocalDescription(offer);
 
 			// Send to SRS with improved retry logic using unique stream ID
-			const whipUrl = `/api/srs-proxy/whip?app=${encodeURIComponent(
-				config.roomName
-			)}&stream=${encodeURIComponent(streamId)}`;
+			const whipUrl = buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.WHIP, {
+				app: config.roomName,
+				stream: streamId,
+			});
 
 			let whipResponse;
 			let retryCount = 0;
@@ -753,7 +785,9 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 		const updatePresence = async () => {
 			try {
 				const presenceResponse = await fetch(
-					`/api/srs-proxy/presence?room=${encodeURIComponent(config.roomName)}`
+					buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.PRESENCE, {
+						room: config.roomName,
+					})
 				);
 				const presenceData = await presenceResponse.json();
 				const allParticipants = new Set<string>(
@@ -806,18 +840,11 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 					!!streamInfo.video ||
 					(streamInfo.publish.active && streamInfo.video === null);
 
-				// For audio, assume it exists if it's explicitly detected OR if this is our own stream
-				// (since we control whether we're sharing audio or not)
-				const isOwnStream = streamInfo.name.includes(
-					config.identity.split("-")[1]
-				); // Match identity pattern
-				const hasAudio =
-					!!streamInfo.audio ||
-					(streamInfo.publish.active && streamInfo.audio === null) || // AGGRESSIVE: Assume all active publishers have audio
-					(isOwnStream && streamInfo.publish.active);
+				// Be conservative about audio - only assume it exists if explicitly detected
+				const hasAudio = !!streamInfo.audio;
 
 				console.log(
-					`🔍 Client: After fallback logic - hasVideo: ${hasVideo}, hasAudio: ${hasAudio}, isOwnStream: ${isOwnStream}, publishActive: ${streamInfo.publish.active}`
+					`🔍 Client: After conservative logic - hasVideo: ${hasVideo}, hasAudio: ${hasAudio}, publishActive: ${streamInfo.publish.active}`
 				);
 
 				newAvailableStreamInfos.set(streamInfo.name, {
@@ -857,9 +884,10 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 		const announceJoin = async () => {
 			try {
 				await fetch(
-					`/api/srs-proxy/presence?room=${encodeURIComponent(
-						config.roomName
-					)}&identity=${encodeURIComponent(config.identity)}`,
+					buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.PRESENCE, {
+						room: config.roomName,
+						identity: config.identity,
+					}),
 					{ method: "POST" }
 				);
 			} catch (error) {
@@ -874,9 +902,11 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 		return () => {
 			clearInterval(heartbeat);
 			fetch(
-				`/api/srs-proxy/presence?room=${encodeURIComponent(
-					config.roomName
-				)}&identity=${encodeURIComponent(config.identity)}&action=leave`,
+				buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.PRESENCE, {
+					room: config.roomName,
+					identity: config.identity,
+					action: "leave",
+				}),
 				{ method: "POST" }
 			).catch(() => {});
 

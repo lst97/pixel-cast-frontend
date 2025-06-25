@@ -21,6 +21,13 @@ export default function Home() {
 		router.push(`/room/${roomId}`);
 	};
 
+	const handleCreateRTMPStream = () => {
+		// Generate a unique stream ID
+		const streamId = uuidv4();
+
+		router.push(`/rtmp/${streamId}`);
+	};
+
 	return (
 		<div className='container mx-auto px-4 py-8 min-h-[calc(100vh-80px)] flex items-center justify-center'>
 			<Card className='w-full max-w-md'>
@@ -39,13 +46,21 @@ export default function Home() {
 						</p>
 					</div>
 				</CardContent>
-				<CardFooter>
+				<CardFooter className='flex flex-col space-y-2'>
 					<Button
 						onClick={handleCreateRoom}
 						className='w-full bg-blue-600 hover:bg-blue-700'
 						size='lg'
 					>
-						Start Screen Sharing
+						Start Screen Sharing (WebRTC)
+					</Button>
+					<Button
+						onClick={handleCreateRTMPStream}
+						variant='outline'
+						className='w-full'
+						size='lg'
+					>
+						🎥 Start RTMP Stream (OBS/FFmpeg)
 					</Button>
 				</CardFooter>
 			</Card>

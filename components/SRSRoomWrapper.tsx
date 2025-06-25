@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { SRSScreenShare } from "@/components/SRSScreenShare";
+import { buildApiUrlWithParams, ENDPOINTS } from "@/lib/config";
 
 interface SRSRoomWrapperProps {
 	roomName: string;
@@ -52,12 +53,15 @@ export default function SRSRoomWrapper({
 					params.set("name", displayName);
 				}
 
-				const response = await fetch(`/api/token?${params.toString()}`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				});
+				const response = await fetch(
+					buildApiUrlWithParams(ENDPOINTS.TOKEN, Object.fromEntries(params)),
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
 				if (!response.ok) {
 					const errorData = await response.json().catch(() => ({}));

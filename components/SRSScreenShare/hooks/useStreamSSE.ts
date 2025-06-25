@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { StreamInfo } from "../types";
+import { buildApiUrlWithParams, ENDPOINTS } from "@/lib/config";
 
 interface SSEMessage {
 	type: "connected" | "streams_update" | "heartbeat";
@@ -46,9 +47,9 @@ export function useStreamSSE(roomName: string): UseStreamSSEResult {
 
 		cleanup();
 
-		const sseUrl = `/api/srs-proxy/streams/sse?room=${encodeURIComponent(
-			roomName
-		)}`;
+		const sseUrl = buildApiUrlWithParams(ENDPOINTS.SRS_PROXY.STREAMS_SSE, {
+			room: roomName,
+		});
 		console.log(`🔗 Connecting to SSE for room: ${roomName} at URL: ${sseUrl}`);
 
 		const eventSource = new EventSource(sseUrl);

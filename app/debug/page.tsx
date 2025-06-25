@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+	buildApiUrl,
+	buildApiUrlWithParams,
+	ENDPOINTS,
+	API_CONFIG,
+} from "@/lib/config";
 
 interface StreamInfo {
 	app: string;
@@ -34,7 +40,9 @@ export default function DebugPage() {
 			// Test SRS API endpoint
 			results.push("🔍 Testing SRS API connectivity...");
 
-			const apiResponse = await fetch("http://localhost:1985/api/v1/summaries");
+			const apiResponse = await fetch(
+				`${API_CONFIG.SRS_DIRECT.API}/api/v1/summaries`
+			);
 			if (apiResponse.ok) {
 				results.push("✅ SRS API is accessible");
 				setSrsStatus("online");
@@ -55,7 +63,7 @@ export default function DebugPage() {
 			results.push("🔍 Testing SRS streams endpoint...");
 
 			const streamsResponse = await fetch(
-				"http://localhost:1985/api/v1/streams/"
+				`${API_CONFIG.SRS_DIRECT.API}/api/v1/streams/`
 			);
 			if (streamsResponse.ok) {
 				results.push("✅ SRS streams endpoint is accessible");
@@ -80,14 +88,16 @@ export default function DebugPage() {
 		try {
 			results.push("🔍 Testing token generation...");
 
-			const response = await fetch("/api/token", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
+			const response = await fetch(
+				buildApiUrlWithParams(ENDPOINTS.TOKEN, {
 					roomName: "debug-room",
 					identity: "debug-user",
 				}),
-			});
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+				}
+			);
 
 			if (response.ok) {
 				const tokenData = await response.json();
@@ -137,9 +147,8 @@ export default function DebugPage() {
 
 			results.push("✅ WebRTC offer created");
 
-			// Test WHIP endpoint
-			const whipUrl =
-				"http://localhost:1985/rtc/v1/whip/?app=debug-room&stream=debug-user";
+			// Test WHIP endpoint (using SRS direct for testing)
+			const whipUrl = `${API_CONFIG.SRS_DIRECT.API}/rtc/v1/whip/?app=debug-room&stream=debug-user`;
 			const whipResponse = await fetch(whipUrl, {
 				method: "POST",
 				headers: { "Content-Type": "application/sdp" },
@@ -177,7 +186,7 @@ export default function DebugPage() {
 	// Refresh streams
 	const refreshStreams = async () => {
 		try {
-			const response = await fetch("http://localhost:1985/api/v1/streams/");
+			const response = await fetch(buildApiUrl(ENDPOINTS.SRS_PROXY.STREAMS));
 			if (response.ok) {
 				const data: SRSStreamsResponse = await response.json();
 				setStreams(data.streams || []);
