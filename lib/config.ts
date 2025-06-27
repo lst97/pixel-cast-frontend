@@ -38,6 +38,7 @@ export const ENDPOINTS = {
 		STREAMS_STOP: "/api/srs-proxy/streams/stop",
 		STREAMS_SSE: "/api/srs-proxy/streams/sse",
 		PRESENCE: "/api/srs-proxy/presence",
+		MONITOR: "/api/srs-proxy/monitor",
 	},
 
 	// RTMP & HLS
@@ -47,6 +48,14 @@ export const ENDPOINTS = {
 	},
 	HLS: {
 		PLAYER: "/api/hls/player",
+	},
+
+	// Room Management
+	ROOMS: {
+		CREATE: "/api/rooms",
+		LIST: "/api/rooms",
+		BY_STREAM_KEY: "/api/rooms/by-stream-key",
+		VALIDATE: "/api/rooms/validate",
 	},
 
 	// Health

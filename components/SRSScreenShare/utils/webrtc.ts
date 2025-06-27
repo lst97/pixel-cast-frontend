@@ -1,7 +1,7 @@
-// WebRTC utilities for ultra-low latency screen sharing with high frame rates
+// WebRTC utilities for low latency screen sharing
 
 /**
- * Creates a peer connection optimized for ultra-low latency and high frame rates
+ * Creates a peer connection optimized for low latency
  */
 export function createUltraLowLatencyPeerConnection(
 	iceServers: RTCIceServer[]
@@ -56,7 +56,7 @@ export function createUltraLowLatencyPeerConnection(
 }
 
 /**
- * Optimizes SDP for ultra-low latency and high frame rate streaming
+ * Optimizes SDP for low latency and high frame rate streaming
  */
 export function optimizeSdpForLowLatency(sdp: string): string {
 	let optimizedSdp = sdp;
@@ -133,7 +133,7 @@ export function optimizeSdpForLowLatency(sdp: string): string {
 }
 
 /**
- * Configures encoding parameters for ultra-low latency and high frame rate
+ * Configures encoding parameters for low latency and high frame rate
  */
 export async function configureLowLatencyEncoding(
 	sender: RTCRtpSender

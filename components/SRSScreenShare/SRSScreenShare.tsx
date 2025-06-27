@@ -26,9 +26,9 @@ import {
 	Link,
 	Users,
 } from "lucide-react";
-import { RemoteVideo } from "./components/RemoteVideo";
-import { LocalThumbnailVideo } from "./components/LocalThumbnailVideo";
-import { ParticipantsSidebar } from "./components/ParticipantsSidebar";
+import { RemoteVideo } from "./components/webrtc/RemoteVideo";
+import { LocalThumbnailVideo } from "./components/webrtc/LocalThumbnailVideo";
+import { ParticipantsSidebar } from "./components/webrtc/ParticipantsSidebar";
 import {
 	SRSScreenShareProps,
 	Participant,

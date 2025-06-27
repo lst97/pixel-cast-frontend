@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Users, Monitor, Eye, ChevronRight } from "lucide-react";
-import LatencyMonitor from "@/components/SRSScreenShare/components/LatencyMonitor";
-import { Participant, SRSConfig } from "../types";
-import { UserIdentityDisplay } from "../../UserIdentityDisplay";
+import LatencyMonitor from "@/components/SRSScreenShare/components/webrtc/LatencyMonitor";
+import { Participant, SRSConfig } from "../../types";
+import { UserIdentityDisplay } from "./UserIdentityDisplay";
 
 interface ParticipantsSidebarProps {
 	setShowParticipants: (show: boolean) => void;

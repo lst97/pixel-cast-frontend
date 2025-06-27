@@ -47,6 +47,7 @@ export default function HLSPlayer({
 	const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
 		null
 	);
+	const [isStreamLive, setIsStreamLive] = useState(true);
 
 	const addLog = (message: string) => {
 		console.log(message);
@@ -83,6 +84,19 @@ export default function HLSPlayer({
 		let mounted = true;
 		let retryTimeout: NodeJS.Timeout;
 		let initializationStarted = false;
+
+		const handleStreamEnded = () => {
+			addLog("🛑 Stream has ended or is unavailable.");
+			setIsStreamLive(false);
+			setError("Stream is offline.");
+			setIsLoading(false);
+			if (playerRef.current) {
+				playerRef.current.unload();
+				playerRef.current.detachMediaElement();
+				playerRef.current.destroy();
+				playerRef.current = null;
+			}
+		};
 
 		const initializePlayer = async () => {
 			// Prevent duplicate initialization
@@ -124,10 +138,10 @@ export default function HLSPlayer({
 				if (!mounted) return;
 
 				setStreamInfo(data);
+				setIsStreamLive(data.isLive);
 
 				if (!data.isLive) {
-					setError("Stream is not live yet");
-					addLog("❌ Stream is not live");
+					handleStreamEnded();
 					// Retry after 5 seconds if stream is not live
 					initializationStarted = false; // Reset flag for retry
 					retryTimeout = setTimeout(() => {
@@ -224,6 +238,10 @@ export default function HLSPlayer({
 
 				player.on("loading_complete", () => {
 					addLog("📋 mpegts.js loading complete");
+					// This can sometimes mean the stream has ended (VOD).
+					if (playerRef.current && !playerRef.current.isLive) {
+						handleStreamEnded();
+					}
 				});
 
 				player.on("recovered_early_eof", () => {
@@ -245,6 +263,24 @@ export default function HLSPlayer({
 				});
 
 				// Video element event listeners
+				const handleVideoError = (event: Event) => {
+					const videoEl = event.target as HTMLVideoElement;
+					const mediaError = videoEl.error;
+					if (mediaError) {
+						addLog(
+							`❌ Video error: Code ${mediaError.code} - ${mediaError.message}`
+						);
+						// Code 4 often relates to src not found or invalid.
+						if (mediaError.code === 4) {
+							handleStreamEnded();
+						} else {
+							setError(`Video Error: ${mediaError.message}`);
+						}
+					}
+				};
+
+				video.addEventListener("error", handleVideoError);
+
 				video.addEventListener("loadstart", () => {
 					addLog("📥 Video loadstart");
 				});
@@ -279,19 +315,6 @@ export default function HLSPlayer({
 
 				video.addEventListener("waiting", () => {
 					addLog("⏳ Video waiting/buffering");
-				});
-
-				video.addEventListener("error", () => {
-					const videoError = video.error;
-					if (videoError) {
-						addLog(
-							`❌ Video error: Code ${videoError.code} - ${videoError.message}`
-						);
-						if (mounted) {
-							setError(`Video Error: ${videoError.message}`);
-							setIsLoading(false);
-						}
-					}
 				});
 
 				// Attach player to video element
@@ -348,7 +371,15 @@ export default function HLSPlayer({
 	}, [app, stream, autoplay, videoElement]);
 
 	const handleRetry = () => {
-		window.location.reload();
+		setError(null);
+		setIsLoading(true);
+		setPlayerStatus("Retrying...");
+		// The useEffect hook will re-initialize the player when `videoElement` is set.
+		// We trigger it by temporarily setting it to null and back.
+		if (videoRef.current) {
+			setVideoElement(null);
+			setTimeout(() => setVideoElement(videoRef.current), 50);
+		}
 	};
 
 	if (error && !streamInfo?.isLive) {

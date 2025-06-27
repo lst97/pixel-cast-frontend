@@ -120,3 +120,28 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* Custom animations for gradient effects */
+@keyframes gradient-x {
+	0%,
+	100% {
+		background-size: 200% 200%;
+		background-position: left center;
+	}
+	50% {
+		background-size: 200% 200%;
+		background-position: right center;
+	}
+}
+
+@layer utilities {
+	.animate-gradient-x {
+		animation: gradient-x 15s ease infinite;
+		background-size: 200% 200%;
+	}
+
+	.animate-gradient-slow {
+		animation: gradient-x 20s ease infinite;
+		background-size: 200% 200%;
+	}
+}

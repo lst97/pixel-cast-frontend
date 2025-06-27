@@ -3,9 +3,9 @@ export { default as SRSScreenShare } from "./SRSScreenShare";
 export { SRSScreenShare as default } from "./SRSScreenShare";
 
 // Sub-components
-export { RemoteVideo } from "./components/RemoteVideo";
-export { LocalThumbnailVideo } from "./components/LocalThumbnailVideo";
-export { ParticipantsSidebar } from "./components/ParticipantsSidebar";
+export { RemoteVideo } from "./components/webrtc/RemoteVideo";
+export { LocalThumbnailVideo } from "./components/webrtc/LocalThumbnailVideo";
+export { ParticipantsSidebar } from "./components/webrtc/ParticipantsSidebar";
 
 // Types
 export type {

@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import HLSPlayer from "@/components/HLSPlayer";
 import { buildApiUrlWithParams, ENDPOINTS } from "@/lib/config";
 import { Copy, RefreshCw, ExternalLink } from "lucide-react";
+import RTMPConnectionMonitor from "@/components/SRSScreenShare/components/rtmp/RTMPConnectionMonitor";
 
 interface RTMPStreamInfo {
 	success: boolean;
@@ -35,11 +36,37 @@ export default function RTMPStreamPage() {
 	const params = useParams();
 	const roomName = params.roomName as string;
 
+	const [roomExists, setRoomExists] = useState<boolean | null>(null);
 	const [rtmpInfo, setRtmpInfo] = useState<RTMPStreamInfo | null>(null);
 	const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [copied, setCopied] = useState(false);
+	const [copiedStreamKey, setCopiedStreamKey] = useState(false);
+	const [srsServerUrl, setSrsServerUrl] = useState("rtmp://127.0.0.1");
+
+	const validateRoom = async () => {
+		try {
+			const response = await fetch(
+				buildApiUrlWithParams(ENDPOINTS.ROOMS.VALIDATE, {
+					roomUrl: `/room/${roomName}`,
+				})
+			);
+
+			if (response.ok) {
+				const data = await response.json();
+				setRoomExists(data.exists);
+				return data.exists;
+			} else {
+				setRoomExists(false);
+				return false;
+			}
+		} catch (err) {
+			console.error("Failed to validate room:", err);
+			setRoomExists(false);
+			return false;
+		}
+	};
 
 	const fetchRTMPInfo = async () => {
 		try {
@@ -59,6 +86,12 @@ export default function RTMPStreamPage() {
 
 			const data: RTMPStreamInfo = await response.json();
 			setRtmpInfo(data);
+
+			// Extract SRS server from the RTMP ingest URL
+			if (data.rtmpIngestUrl) {
+				const url = new URL(data.rtmpIngestUrl);
+				setSrsServerUrl(`rtmp://${url.hostname}`);
+			}
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : "Failed to fetch RTMP info"
@@ -87,19 +120,33 @@ export default function RTMPStreamPage() {
 	};
 
 	useEffect(() => {
-		fetchRTMPInfo();
-		fetchStreamStatus();
+		const initializeRoom = async () => {
+			const exists = await validateRoom();
+			if (exists) {
+				fetchRTMPInfo();
+				fetchStreamStatus();
 
-		// Poll stream status every 5 seconds
-		const interval = setInterval(fetchStreamStatus, 5000);
-		return () => clearInterval(interval);
+				// Poll stream status every 5 seconds
+				const interval = setInterval(fetchStreamStatus, 5000);
+				return () => clearInterval(interval);
+			} else {
+				setIsLoading(false);
+			}
+		};
+
+		initializeRoom();
 	}, [roomName]);
 
-	const copyToClipboard = async (text: string) => {
+	const copyToClipboard = async (text: string, isStreamKey = false) => {
 		try {
 			await navigator.clipboard.writeText(text);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
+			if (isStreamKey) {
+				setCopiedStreamKey(true);
+				setTimeout(() => setCopiedStreamKey(false), 2000);
+			} else {
+				setCopied(true);
+				setTimeout(() => setCopied(false), 2000);
+			}
 		} catch (err) {
 			console.error("Failed to copy:", err);
 		}
@@ -118,6 +165,37 @@ export default function RTMPStreamPage() {
 						<div className='text-center'>
 							<Spinner className='mx-auto mb-4' />
 							<p className='text-lg font-medium'>Loading RTMP Stream...</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (roomExists === false) {
+		return (
+			<div className='min-h-screen bg-gray-50 p-4'>
+				<div className='max-w-6xl mx-auto'>
+					<div className='flex items-center justify-center min-h-[50vh]'>
+						<div className='text-center'>
+							<div className='mb-4'>
+								<div className='text-6xl mb-4'>🚫</div>
+								<h1 className='text-3xl font-bold text-gray-900 mb-2'>
+									Room Not Found
+								</h1>
+								<p className='text-lg text-gray-600 mb-4'>
+									The RTMP room "{roomName}" does not exist.
+								</p>
+								<p className='text-sm text-gray-500 mb-6'>
+									This room may have been deleted or the URL is incorrect.
+								</p>
+								<Button
+									onClick={() => (window.location.href = "/")}
+									className='bg-blue-600 hover:bg-blue-700'
+								>
+									← Go Home
+								</Button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -159,16 +237,6 @@ export default function RTMPStreamPage() {
 							</p>
 						</div>
 						<div className='flex items-center space-x-2'>
-							{streamStatus?.isLive && (
-								<Badge variant='destructive' className='bg-red-600'>
-									● LIVE
-								</Badge>
-							)}
-							{streamStatus && (
-								<Badge variant='secondary'>
-									{streamStatus.viewerCount} viewers
-								</Badge>
-							)}
 							<Button
 								variant='outline'
 								size='icon'
@@ -181,21 +249,42 @@ export default function RTMPStreamPage() {
 					</div>
 				</div>
 
-				<div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-					{/* Stream Configuration */}
-					<div className='lg:col-span-1'>
+				<div className='flex flex-col lg:flex-row gap-6'>
+					{/* Main Content (Player) */}
+					<div className='flex-1'>
+						<Card>
+							<CardHeader>
+								<CardTitle>Live Stream Player</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className='aspect-video bg-black rounded-lg overflow-hidden'>
+									<HLSPlayer
+										app='__defaultApp__'
+										stream={roomName}
+										className='w-full h-full'
+										autoplay={true}
+										controls={true}
+										muted={false}
+									/>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+
+					{/* Sidebar */}
+					<div className='w-full lg:w-96 flex-shrink-0 space-y-6'>
 						<Card>
 							<CardHeader>
 								<CardTitle>Stream Configuration</CardTitle>
 							</CardHeader>
 							<CardContent className='space-y-4'>
-								{/* RTMP Ingest URL */}
+								{/* RTMP Server URL */}
 								<div>
-									<Label htmlFor='rtmp-url'>RTMP Ingest URL</Label>
+									<Label htmlFor='rtmp-server'>RTMP Server</Label>
 									<div className='flex mt-1'>
 										<Input
-											id='rtmp-url'
-											value={rtmpInfo?.rtmpIngestUrl || ""}
+											id='rtmp-server'
+											value={srsServerUrl}
 											readOnly
 											className='font-mono text-sm'
 										/>
@@ -203,9 +292,7 @@ export default function RTMPStreamPage() {
 											variant='outline'
 											size='icon'
 											className='ml-2'
-											onClick={() =>
-												copyToClipboard(rtmpInfo?.rtmpIngestUrl || "")
-											}
+											onClick={() => copyToClipboard(srsServerUrl)}
 											title='Copy to clipboard'
 										>
 											<Copy className='h-4 w-4' />
@@ -221,21 +308,10 @@ export default function RTMPStreamPage() {
 								{/* Stream Key */}
 								<div>
 									<Label htmlFor='stream-key'>Stream Key</Label>
-									<Input
-										id='stream-key'
-										value={roomName}
-										readOnly
-										className='font-mono text-sm mt-1'
-									/>
-								</div>
-
-								{/* HLS Playback URL */}
-								<div>
-									<Label htmlFor='hls-url'>HLS Playback URL</Label>
 									<div className='flex mt-1'>
 										<Input
-											id='hls-url'
-											value={rtmpInfo?.hlsPlaybackUrl || ""}
+											id='stream-key'
+											value={roomName}
 											readOnly
 											className='font-mono text-sm'
 										/>
@@ -243,26 +319,38 @@ export default function RTMPStreamPage() {
 											variant='outline'
 											size='icon'
 											className='ml-2'
-											onClick={() =>
-												copyToClipboard(rtmpInfo?.hlsPlaybackUrl || "")
-											}
-											title='Copy to clipboard'
+											onClick={() => copyToClipboard(roomName, true)}
+											title='Copy stream key to clipboard'
 										>
 											<Copy className='h-4 w-4' />
 										</Button>
 									</div>
+									{copiedStreamKey && (
+										<p className='text-sm text-green-600 mt-1'>
+											Stream key copied!
+										</p>
+									)}
 								</div>
 
 								{/* Instructions */}
 								<div className='pt-4 border-t'>
 									<h4 className='font-medium mb-2'>How to Stream</h4>
 									<ol className='text-sm text-gray-600 space-y-1'>
-										<li>1. Copy the RTMP Ingest URL above</li>
-										<li>2. In OBS or your streaming software:</li>
-										<li>&nbsp;&nbsp;&nbsp;• Set Server to the RTMP URL</li>
-										<li>&nbsp;&nbsp;&nbsp;• Set Stream Key to: {roomName}</li>
-										<li>3. Start streaming!</li>
-										<li>4. Your stream will appear in the player →</li>
+										<li>
+											1. Copy the RTMP Server URL: <code>{srsServerUrl}</code>
+										</li>
+										<li>
+											2. Copy the Stream Key: <code>{roomName}</code>
+										</li>
+										<li>3. In OBS or your streaming software:</li>
+										<li>
+											&nbsp;&nbsp;&nbsp;• Set Server to the RTMP Server URL
+										</li>
+										<li>
+											&nbsp;&nbsp;&nbsp;• Set Stream Key to the copied key
+										</li>
+										<li>4. Start streaming!</li>
+										<li>5. Your stream will appear in the player.</li>
 									</ol>
 								</div>
 
@@ -285,64 +373,13 @@ export default function RTMPStreamPage() {
 								</div>
 							</CardContent>
 						</Card>
-					</div>
 
-					{/* HLS Player */}
-					<div className='lg:col-span-2'>
-						<Card>
-							<CardHeader>
-								<CardTitle>Live Stream Player</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className='aspect-video bg-black rounded-lg overflow-hidden'>
-									<HLSPlayer
-										app='__defaultApp__'
-										stream={roomName}
-										className='w-full h-full'
-										autoplay={true}
-										controls={true}
-										muted={false}
-									/>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Stream Info */}
-						{streamStatus && (
-							<Card className='mt-4'>
-								<CardHeader>
-									<CardTitle>Stream Information</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
-										<div>
-											<p className='font-medium text-gray-500'>Status</p>
-											<p
-												className={
-													streamStatus.isLive
-														? "text-green-600"
-														: "text-gray-600"
-												}
-											>
-												{streamStatus.isLive ? "Live" : "Offline"}
-											</p>
-										</div>
-										<div>
-											<p className='font-medium text-gray-500'>Viewers</p>
-											<p>{streamStatus.viewerCount}</p>
-										</div>
-										<div>
-											<p className='font-medium text-gray-500'>App</p>
-											<p className='font-mono'>{streamStatus.app}</p>
-										</div>
-										<div>
-											<p className='font-medium text-gray-500'>Stream</p>
-											<p className='font-mono'>{streamStatus.stream}</p>
-										</div>
-									</div>
-								</CardContent>
-							</Card>
-						)}
+						{/* RTMP Connection Monitor */}
+						<RTMPConnectionMonitor
+							roomName={roomName}
+							app='__defaultApp__'
+							isActive={true}
+						/>
 					</div>
 				</div>
 			</div>

@@ -79,27 +79,13 @@ export function useStreamSSE(roomName: string): UseStreamSSEResult {
 						break;
 
 					case "streams_update":
+						// Only accept updates for the room this hook is subscribed to.
 						if (message.roomName === roomName && message.streams) {
 							console.log(
-								`📡 Received stream update for ${roomName}:`,
+								`📡 Received targeted stream update for ${roomName}:`,
 								message.streams
 							);
-							// Debug: Log what each stream contains
-							message.streams.forEach((stream: StreamInfo, index: number) => {
-								console.log(
-									`🔍 Client SSE: Stream ${index} (${stream.name}):`,
-									{
-										video: stream.video,
-										audio: stream.audio,
-										publish: stream.publish,
-									}
-								);
-							});
 							setStreams(message.streams);
-						} else {
-							console.log(
-								`🔍 Stream update for different room: ${message.roomName} (expected: ${roomName})`
-							);
 						}
 						break;
 
