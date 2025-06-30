@@ -13,6 +13,9 @@ COPY package.json pnpm-lock.yaml* ./
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# Copy the environment file
+COPY .env ./
+
 # Copy the rest of the application code
 COPY . .
 
@@ -32,6 +35,9 @@ COPY package.json pnpm-lock.yaml* ./
 
 # Install only production dependencies
 RUN pnpm install --frozen-lockfile --prod
+
+# Copy the environment file from base stage
+COPY --from=base /app/.env ./
 
 # Copy the built application from the previous stage
 COPY --from=base /app/.next ./.next

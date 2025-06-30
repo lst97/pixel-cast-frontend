@@ -78,13 +78,13 @@ const response = await fetch(buildApiUrl(ENDPOINTS.TOKEN));
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_SRS_API_URL=http://158.179.18.186:1985
+NEXT_PUBLIC_SRS_API_URL=http://localhost:1985
 ```
 
 ### Production Example
 
 ```env
-NEXT_PUBLIC_BACKEND_URL=https://api.your-domain.com
+NEXT_PUBLIC_BACKEND_URL=https://pixelcast-api.your-domain.com
 NEXT_PUBLIC_SRS_API_URL=https://srs.your-domain.com:1985
 ```
 
