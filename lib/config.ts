@@ -5,9 +5,9 @@ export const API_CONFIG = {
 
 	// SRS Direct URLs (for development/debug only)
 	SRS_DIRECT: {
-		API: process.env.NEXT_PUBLIC_SRS_API_URL || "http://localhost:1985",
+		API: process.env.NEXT_PUBLIC_SRS_HTTP_API_URL || "http://localhost:1985",
 		WEBRTC: process.env.NEXT_PUBLIC_SRS_WEBRTC_URL || "http://localhost:8000",
-		HTTP: process.env.NEXT_PUBLIC_SRS_HTTP_URL || "http://localhost:8080",
+		HTTP: process.env.NEXT_PUBLIC_SRS_HLS_URL || "http://localhost:8080",
 	},
 } as const;
 
