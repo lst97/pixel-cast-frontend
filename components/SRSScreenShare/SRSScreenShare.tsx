@@ -230,7 +230,7 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 									identity: streamId,
 									name: streamId,
 									isSharing: true,
-									streamUrl: `http://localhost:1985/rtc/v1/whep/?app=${config.roomName}&stream=${streamId}`,
+									streamUrl: `http://${process.env.NEXT_PUBLIC_SRS_HTTP_API_URL}/rtc/v1/whep/?app=${config.roomName}&stream=${streamId}`,
 								},
 							];
 						}

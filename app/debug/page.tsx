@@ -309,14 +309,14 @@ export default function DebugPage() {
 						Test Room
 					</Link>
 					<a
-						href='http://localhost:1985/api/v1/summaries'
+						href={`http://${process.env.NEXT_PUBLIC_SRS_HTTP_API_URL}/api/v1/summaries`}
 						target='_blank'
 						className='text-blue-600 hover:underline'
 					>
 						SRS API Summary
 					</a>
 					<a
-						href='http://localhost:8080'
+						href={`http://${process.env.NEXT_PUBLIC_SRS_HLS_URL}`}
 						target='_blank'
 						className='text-blue-600 hover:underline'
 					>

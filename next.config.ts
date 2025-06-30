@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
 		}
 		return config;
 	},
+	env: {
+		NEXT_PUBLIC_FRONTEND_BASE_URL: process.env.NEXT_PUBLIC_FRONTEND_BASE_URL,
+		NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+		NEXT_PUBLIC_SRS_HTTP_API_URL: process.env.NEXT_PUBLIC_SRS_HTTP_API_URL,
+		NEXT_PUBLIC_SRS_RTMP_URL: process.env.NEXT_PUBLIC_SRS_RTMP_URL,
+		NEXT_PUBLIC_SRS_HLS_URL: process.env.NEXT_PUBLIC_SRS_HLS_URL,
+		NEXT_PUBLIC_SRS_WEBRTC_URL: process.env.NEXT_PUBLIC_SRS_WEBRTC_URL,
+	},
 	async headers() {
 		return [
 			{

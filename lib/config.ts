@@ -1,18 +1,13 @@
 // API Configuration
 export const API_CONFIG = {
 	// Deno backend URL
-	BASE_URL:
-		process.env.NEXT_PUBLIC_BACKEND_URL ||
-		(process.env.NODE_ENV === "production"
-			? "https://your-backend-domain.com" // Replace with your production URL
-			: "http://localhost:3001"),
+	BASE_URL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001",
 
 	// SRS Direct URLs (for development/debug only)
 	SRS_DIRECT: {
-		API: process.env.NEXT_PUBLIC_SRS_API_URL || "http://158.179.18.186:1985",
-		WEBRTC:
-			process.env.NEXT_PUBLIC_SRS_WEBRTC_URL || "http://158.179.18.186:8000",
-		HTTP: process.env.NEXT_PUBLIC_SRS_HTTP_URL || "http://158.179.18.186:8080",
+		API: process.env.NEXT_PUBLIC_SRS_API_URL || "http://localhost:1985",
+		WEBRTC: process.env.NEXT_PUBLIC_SRS_WEBRTC_URL || "http://localhost:8000",
+		HTTP: process.env.NEXT_PUBLIC_SRS_HTTP_URL || "http://localhost:8080",
 	},
 } as const;
 

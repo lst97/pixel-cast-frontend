@@ -35,8 +35,14 @@ export default function RootLayout({
 				<meta httpEquiv='origin-trial' content='WebRTC-UltraLowLatency' />
 
 				{/* Performance hints */}
-				<link rel='dns-prefetch' href='//localhost:1985' />
-				<link rel='preconnect' href='//localhost:8000' />
+				<link
+					rel='dns-prefetch'
+					href={`//${process.env.NEXT_PUBLIC_SRS_HTTP_API_URL}`}
+				/>
+				<link
+					rel='preconnect'
+					href={`//${process.env.NEXT_PUBLIC_SRS_WEBRTC_URL}`}
+				/>
 
 				{/* Additional performance optimizations */}
 				<meta name='referrer' content='no-referrer-when-downgrade' />
