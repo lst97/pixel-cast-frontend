@@ -8,6 +8,7 @@ export const API_CONFIG = {
 		API: process.env.NEXT_PUBLIC_SRS_HTTP_API_URL || "http://localhost:1985",
 		WEBRTC: process.env.NEXT_PUBLIC_SRS_WEBRTC_URL || "http://localhost:8000",
 		HTTP: process.env.NEXT_PUBLIC_SRS_HLS_URL || "http://localhost:8080",
+		RTMP: process.env.NEXT_PUBLIC_SRS_RTMP_URL || "rtmp://localhost:1935",
 	},
 } as const;
 

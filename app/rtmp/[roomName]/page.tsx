@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import HLSPlayer from "@/components/HLSPlayer";
-import { buildApiUrlWithParams, ENDPOINTS } from "@/lib/config";
+import { buildApiUrlWithParams, ENDPOINTS, API_CONFIG } from "@/lib/config";
 import { Copy, RefreshCw, ExternalLink } from "lucide-react";
 import RTMPConnectionMonitor from "@/components/SRSScreenShare/components/rtmp/RTMPConnectionMonitor";
 
@@ -32,7 +32,7 @@ export default function RTMPStreamPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [copied, setCopied] = useState(false);
 	const [copiedStreamKey, setCopiedStreamKey] = useState(false);
-	const [srsServerUrl, setSrsServerUrl] = useState("rtmp://127.0.0.1");
+	const [srsServerUrl, setSrsServerUrl] = useState(API_CONFIG.SRS_DIRECT.RTMP);
 
 	const validateRoom = useCallback(async () => {
 		try {
@@ -75,11 +75,8 @@ export default function RTMPStreamPage() {
 
 			const data: RTMPStreamInfo = await response.json();
 
-			// Extract SRS server from the RTMP ingest URL
-			if (data.rtmpIngestUrl) {
-				const url = new URL(data.rtmpIngestUrl);
-				setSrsServerUrl(`rtmp://${url.hostname}`);
-			}
+			// Use the configured RTMP URL instead of extracting from response
+			setSrsServerUrl(API_CONFIG.SRS_DIRECT.RTMP);
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : "Failed to fetch RTMP info"
