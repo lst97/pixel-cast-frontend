@@ -60,7 +60,7 @@ export default function FLVTestPage() {
 				// Create player
 				setStatus("Creating player");
 				const flvUrl =
-					"http://158.179.18.186:8080/__pixelcast__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv";
+					"http://158.179.18.186:8080/__defaultApp__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv";
 
 				const player = mpegts.createPlayer(
 					{
@@ -200,7 +200,7 @@ export default function FLVTestPage() {
 				<div className='mt-4 text-sm text-gray-400'>
 					<p>
 						Testing FLV URL:
-						http://158.179.18.186:8080/__pixelcast__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv
+						http://158.179.18.186:8080/__defaultApp__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv
 					</p>
 				</div>
 			</div>

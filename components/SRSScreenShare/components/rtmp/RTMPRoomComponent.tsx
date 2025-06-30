@@ -75,7 +75,7 @@ export default function RTMPRoomComponent({
 
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.RTMP.INGEST, {
-					app: "__pixelcast__",
+					app: "__defaultApp__",
 					stream: roomName,
 				})
 			);
@@ -104,7 +104,7 @@ export default function RTMPRoomComponent({
 		try {
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.RTMP.STATUS, {
-					app: "__pixelcast__",
+					app: "__defaultApp__",
 					stream: roomName,
 				})
 			);
@@ -255,7 +255,7 @@ export default function RTMPRoomComponent({
 								<div className='aspect-video bg-black rounded-lg overflow-hidden'>
 									<HLSPlayer
 										key={playerKey}
-										app='__pixelcast__'
+										app='__defaultApp__'
 										stream={roomName}
 										className='w-full h-full'
 										autoplay={true}
@@ -398,7 +398,7 @@ export default function RTMPRoomComponent({
 							{/* RTMP Connection Monitor */}
 							<RTMPConnectionMonitor
 								roomName={roomName}
-								app='__pixelcast__'
+								app='__defaultApp__'
 								isActive={true}
 							/>
 						</div>

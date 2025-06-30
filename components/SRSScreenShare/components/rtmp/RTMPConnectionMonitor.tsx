@@ -21,7 +21,7 @@ interface RTMPConnectionMonitorProps {
 
 export default function RTMPConnectionMonitor({
 	roomName,
-	app = "__pixelcast__",
+	app = "__defaultApp__",
 	isActive = true,
 	className = "",
 }: RTMPConnectionMonitorProps) {
