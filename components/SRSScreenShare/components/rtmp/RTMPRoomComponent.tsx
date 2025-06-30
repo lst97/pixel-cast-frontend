@@ -19,16 +19,6 @@ import {
 import { useStreamSSE } from "../../hooks/useStreamSSE";
 import RTMPConnectionMonitor from "./RTMPConnectionMonitor";
 
-interface RTMPStreamInfo {
-	success: boolean;
-	rtmpIngestUrl: string;
-	hlsPlaybackUrl: string;
-	flvPlaybackUrl: string;
-	rtmpPlaybackUrl: string;
-	app: string;
-	stream: string;
-}
-
 interface StreamInfo {
 	app: string;
 	name: string;
@@ -83,8 +73,6 @@ export default function RTMPRoomComponent({
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}: Failed to get RTMP info`);
 			}
-
-			const data: RTMPStreamInfo = await response.json();
 
 			// Use the configured RTMP URL instead of extracting from response
 			setSrsServerUrl(API_CONFIG.SRS_DIRECT.RTMP);
