@@ -1,8 +1,9 @@
 "use client";
 
-import { ScreenShare, Github, Settings } from "lucide-react";
+import { ScreenShare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import GithubIcon from "./GithubIcon";
 
 export default function Header() {
 	return (
@@ -31,7 +32,7 @@ export default function Header() {
 					{/* Navigation Links */}
 					<nav className='hidden md:flex items-center space-x-6'>
 						<Link
-							href='/'
+							href='https://github.com/lst97/PixelCast'
 							className='text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors'
 						>
 							Home
@@ -44,7 +45,7 @@ export default function Header() {
 						</Link>
 						<div className='flex items-center space-x-2'>
 							<Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
-								<Github className='h-4 w-4' />
+								<GithubIcon className='h-4 w-4' />
 							</Button>
 						</div>
 					</nav>

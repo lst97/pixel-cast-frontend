@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import SRSRoomWrapper from "@/components/SRSRoomWrapper";
 import { getPersistentIdentity } from "@/lib/persistentIdentity";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ function RoomPageContent({ params }: RoomPageProps) {
 		return persistentIdentity;
 	}, [roomName]); // Only recalculate if room changes
 
-	const validateRoom = async () => {
+	const validateRoom = useCallback(async () => {
 		try {
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.ROOMS.VALIDATE, {
@@ -67,11 +67,11 @@ function RoomPageContent({ params }: RoomPageProps) {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [roomName]);
 
 	useEffect(() => {
 		validateRoom();
-	}, [roomName]);
+	}, [validateRoom]);
 
 	if (isLoading) {
 		return (
@@ -100,7 +100,7 @@ function RoomPageContent({ params }: RoomPageProps) {
 									Room Not Found
 								</h1>
 								<p className='text-lg text-gray-600 mb-4'>
-									The room "{roomName}" does not exist.
+									The room &quot;{roomName}&quot; does not exist.
 								</p>
 								<p className='text-sm text-gray-500 mb-6'>
 									This room may have been deleted or the URL is incorrect.

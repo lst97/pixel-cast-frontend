@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
+interface PlayerErrorInfo {
+	code?: number;
+	msg?: string;
+	message?: string;
+	[key: string]: unknown;
+}
+
 export default function FLVTestPage() {
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const playerRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -53,7 +60,7 @@ export default function FLVTestPage() {
 				// Create player
 				setStatus("Creating player");
 				const flvUrl =
-					"http://158.179.18.186:8080/__defaultApp__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv";
+					"http://158.179.18.186:8080/__pixelcast__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv";
 
 				const player = mpegts.createPlayer(
 					{
@@ -79,10 +86,13 @@ export default function FLVTestPage() {
 				playerRef.current = player;
 
 				// Set up event listeners
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				player.on(
 					"error",
-					(errorType: string, errorDetail: string, errorInfo: any) => {
+					(
+						errorType: string,
+						errorDetail: string,
+						errorInfo: PlayerErrorInfo
+					) => {
 						addLog(`Player error: ${errorType} - ${errorDetail}`);
 						console.error("Player error:", errorType, errorDetail, errorInfo);
 						setError(`Player Error: ${errorDetail}`);
@@ -190,7 +200,7 @@ export default function FLVTestPage() {
 				<div className='mt-4 text-sm text-gray-400'>
 					<p>
 						Testing FLV URL:
-						http://158.179.18.186:8080/__defaultApp__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv
+						http://158.179.18.186:8080/__pixelcast__/0851cf3b-b43b-4bea-8688-2efb01fa1dee.flv
 					</p>
 				</div>
 			</div>

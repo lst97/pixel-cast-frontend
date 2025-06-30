@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-
 import { Label } from "@/components/ui/label";
 
 import {
@@ -100,6 +99,35 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 		const [width, height] = resolution.split("x").map(Number);
 		return { width, height };
 	}, [resolution]);
+
+	const stopScreenShare = useCallback(() => {
+		console.log("🛑 Stopping screen share...");
+
+		if (localStreamRef.current) {
+			localStreamRef.current.getTracks().forEach((track) => track.stop());
+		}
+
+		if (publishPcRef.current) {
+			try {
+				publishPcRef.current.getSenders().forEach((sender) => {
+					if (sender.track) {
+						publishPcRef.current?.removeTrack(sender);
+					}
+				});
+				publishPcRef.current.close();
+			} catch (error) {
+				console.warn("⚠️ Error during cleanup:", error);
+			}
+			publishPcRef.current = null;
+		}
+
+		if (localVideoRef.current) {
+			localVideoRef.current.srcObject = null;
+		}
+
+		localStreamRef.current = null;
+		setIsSharing(false);
+	}, []);
 
 	// Helper function to truncate room name
 	const truncateRoomName = (name: string, maxLength: number = 20) => {
@@ -339,7 +367,7 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 				}
 			}
 		},
-		[config.iceServers, config.roomName]
+		[config.iceServers, config.roomName, selectedStreamId]
 	);
 
 	const unsubscribeFromStream = (streamId: string) => {
@@ -711,37 +739,8 @@ function SRSScreenShare({ config, onDisconnect }: SRSScreenShareProps) {
 		config.iceServers,
 		resolution,
 		frameRate,
-		getCurrentResolution,
+		stopScreenShare,
 	]);
-
-	const stopScreenShare = useCallback(() => {
-		console.log("🛑 Stopping screen share...");
-
-		if (localStreamRef.current) {
-			localStreamRef.current.getTracks().forEach((track) => track.stop());
-		}
-
-		if (publishPcRef.current) {
-			try {
-				publishPcRef.current.getSenders().forEach((sender) => {
-					if (sender.track) {
-						publishPcRef.current?.removeTrack(sender);
-					}
-				});
-				publishPcRef.current.close();
-			} catch (error) {
-				console.warn("⚠️ Error during cleanup:", error);
-			}
-			publishPcRef.current = null;
-		}
-
-		if (localVideoRef.current) {
-			localVideoRef.current.srcObject = null;
-		}
-
-		localStreamRef.current = null;
-		setIsSharing(false);
-	}, []);
 
 	const toggleFullscreen = () => {
 		if (!containerRef.current) return;

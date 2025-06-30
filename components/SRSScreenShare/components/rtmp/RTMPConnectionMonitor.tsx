@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ interface RTMPConnectionMonitorProps {
 
 export default function RTMPConnectionMonitor({
 	roomName,
-	app = "__defaultApp__",
+	app = "__pixelcast__",
 	isActive = true,
 	className = "",
 }: RTMPConnectionMonitorProps) {
@@ -35,7 +35,7 @@ export default function RTMPConnectionMonitor({
 	const [error, setError] = useState<string | null>(null);
 	const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-	const collectMetrics = async () => {
+	const collectMetrics = useCallback(async () => {
 		try {
 			setError(null);
 			const response = await fetch(
@@ -67,7 +67,7 @@ export default function RTMPConnectionMonitor({
 				lastUpdated: Date.now(),
 			}));
 		}
-	};
+	}, [app, roomName]);
 
 	useEffect(() => {
 		if (!isActive) {
@@ -93,7 +93,7 @@ export default function RTMPConnectionMonitor({
 				intervalRef.current = null;
 			}
 		};
-	}, [isActive, roomName, app]);
+	}, [isActive, roomName, app, collectMetrics]);
 
 	const formatUptime = (seconds: number): string => {
 		if (!seconds || seconds < 0) return "N/A";
@@ -104,14 +104,6 @@ export default function RTMPConnectionMonitor({
 		if (days > 0) return `${days}d ${hours}h ${minutes}m`;
 		if (hours > 0) return `${hours}h ${minutes}m`;
 		return `${minutes}m`;
-	};
-
-	const formatBytes = (bytes: number): string => {
-		if (bytes === 0) return "0 B";
-		const k = 1024;
-		const sizes = ["B", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 	};
 
 	const getConnectionStatus = () => {

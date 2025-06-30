@@ -11,6 +11,7 @@ import {
 	updateDisplayName,
 	clearPersistentIdentity,
 	isIdentityExpiringSoon,
+	PersistentIdentity,
 } from "@/lib/persistentIdentity";
 import { User, RefreshCw, Edit3, Trash2, AlertTriangle } from "lucide-react";
 
@@ -23,7 +24,7 @@ export const UserIdentityDisplay: React.FC<UserIdentityDisplayProps> = ({
 	className,
 	onIdentityChange,
 }) => {
-	const [identity, setIdentity] = useState<any>(null);
+	const [identity, setIdentity] = useState<PersistentIdentity | null>(null);
 	const [isEditing, setIsEditing] = useState(false);
 	const [newDisplayName, setNewDisplayName] = useState("");
 	const [isExpiringSoon, setIsExpiringSoon] = useState(false);
@@ -86,10 +87,6 @@ export const UserIdentityDisplay: React.FC<UserIdentityDisplayProps> = ({
 			</Card>
 		);
 	}
-
-	const formatDate = (timestamp: number) => {
-		return new Date(timestamp).toLocaleString();
-	};
 
 	const getTimeSince = (timestamp: number) => {
 		const diff = Date.now() - timestamp;

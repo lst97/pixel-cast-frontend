@@ -8,6 +8,7 @@ import { UserIdentityDisplay } from "@/components/SRSScreenShare/components/webr
 import {
 	getPersistentIdentity,
 	clearPersistentIdentity,
+	type PersistentIdentity,
 } from "@/lib/persistentIdentity";
 import { API_CONFIG, ENDPOINTS, buildApiUrl } from "@/lib/config";
 import {
@@ -26,7 +27,7 @@ interface ConnectionTest {
 	name: string;
 	status: "idle" | "testing" | "success" | "error";
 	url: string;
-	result?: any;
+	result?: Record<string, unknown>;
 	error?: string;
 	duration?: number;
 }
@@ -39,7 +40,7 @@ interface IdentityTest {
 }
 
 export default function TestIdentityPage() {
-	const [identity, setIdentity] = useState<any>(null);
+	const [identity, setIdentity] = useState<PersistentIdentity | null>(null);
 	const [refreshCount, setRefreshCount] = useState(0);
 	const [connectionTests, setConnectionTests] = useState<ConnectionTest[]>([
 		{
@@ -86,7 +87,7 @@ export default function TestIdentityPage() {
 
 		try {
 			let response: Response;
-			let result: any;
+			let result: Record<string, unknown>;
 
 			if (test.name === "Token Generation") {
 				// POST request for token generation

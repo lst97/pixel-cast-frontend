@@ -1,7 +1,7 @@
 // Persistent Identity Management for PixelCast
 // Remembers user identity across page refreshes without using URL parameters
 
-interface PersistentIdentity {
+export interface PersistentIdentity {
 	identity: string;
 	displayName: string;
 	createdAt: number;

@@ -47,7 +47,6 @@ export default function HLSPlayer({
 	const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
 		null
 	);
-	const [isStreamLive, setIsStreamLive] = useState(true);
 
 	const addLog = (message: string) => {
 		console.log(message);
@@ -87,7 +86,6 @@ export default function HLSPlayer({
 
 		const handleStreamEnded = () => {
 			addLog("🛑 Stream has ended or is unavailable.");
-			setIsStreamLive(false);
 			setError("Stream is offline.");
 			setIsLoading(false);
 			if (playerRef.current) {
@@ -138,7 +136,6 @@ export default function HLSPlayer({
 				if (!mounted) return;
 
 				setStreamInfo(data);
-				setIsStreamLive(data.isLive);
 
 				if (!data.isLive) {
 					handleStreamEnded();

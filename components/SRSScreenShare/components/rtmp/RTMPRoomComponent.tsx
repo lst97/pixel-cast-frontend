@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,13 +29,22 @@ interface RTMPStreamInfo {
 	stream: string;
 }
 
+interface StreamInfo {
+	app: string;
+	name: string;
+	publish?: {
+		active: boolean;
+	};
+	clients: number;
+}
+
 interface StreamStatus {
 	success: boolean;
 	isLive: boolean;
 	viewerCount: number;
 	app: string;
 	stream: string;
-	streamInfo: any;
+	streamInfo: StreamInfo;
 }
 
 interface RTMPRoomComponentProps {
@@ -45,7 +54,6 @@ interface RTMPRoomComponentProps {
 export default function RTMPRoomComponent({
 	roomName,
 }: RTMPRoomComponentProps) {
-	const [rtmpInfo, setRtmpInfo] = useState<RTMPStreamInfo | null>(null);
 	const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -60,14 +68,14 @@ export default function RTMPRoomComponent({
 	const { streams: sseStreams, isConnected: isSseConnected } =
 		useStreamSSE(roomName);
 
-	const fetchRTMPInfo = async () => {
+	const fetchRTMPInfo = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
 
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.RTMP.INGEST, {
-					app: "__defaultApp__",
+					app: "__pixelcast__",
 					stream: roomName,
 				})
 			);
@@ -77,7 +85,6 @@ export default function RTMPRoomComponent({
 			}
 
 			const data: RTMPStreamInfo = await response.json();
-			setRtmpInfo(data);
 
 			// Extract SRS server from the RTMP ingest URL
 			if (data.rtmpIngestUrl) {
@@ -91,13 +98,13 @@ export default function RTMPRoomComponent({
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [roomName]);
 
-	const fetchStreamStatus = async () => {
+	const fetchStreamStatus = useCallback(async () => {
 		try {
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.RTMP.STATUS, {
-					app: "__defaultApp__",
+					app: "__pixelcast__",
 					stream: roomName,
 				})
 			);
@@ -109,13 +116,13 @@ export default function RTMPRoomComponent({
 		} catch (err) {
 			console.error("Failed to fetch stream status:", err);
 		}
-	};
+	}, [roomName]);
 
 	useEffect(() => {
 		fetchRTMPInfo();
 		// Fetch initial status, then rely on SSE
 		fetchStreamStatus();
-	}, [roomName]);
+	}, [roomName, fetchRTMPInfo, fetchStreamStatus]);
 
 	// Update status based on SSE events
 	useEffect(() => {
@@ -138,7 +145,12 @@ export default function RTMPRoomComponent({
 						viewerCount: viewerCount,
 						app: currentStream.app,
 						stream: currentStream.name,
-						streamInfo: currentStream,
+						streamInfo: {
+							app: currentStream.app,
+							name: currentStream.name,
+							publish: currentStream.publish,
+							clients: currentStream.clients || 0,
+						},
 					};
 				});
 			} else if (streamStatus?.isLive) {
@@ -243,7 +255,7 @@ export default function RTMPRoomComponent({
 								<div className='aspect-video bg-black rounded-lg overflow-hidden'>
 									<HLSPlayer
 										key={playerKey}
-										app='__defaultApp__'
+										app='__pixelcast__'
 										stream={roomName}
 										className='w-full h-full'
 										autoplay={true}
@@ -386,7 +398,7 @@ export default function RTMPRoomComponent({
 							{/* RTMP Connection Monitor */}
 							<RTMPConnectionMonitor
 								roomName={roomName}
-								app='__defaultApp__'
+								app='__pixelcast__'
 								isActive={true}
 							/>
 						</div>

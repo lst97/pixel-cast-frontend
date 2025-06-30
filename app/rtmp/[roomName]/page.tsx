@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,29 +23,18 @@ interface RTMPStreamInfo {
 	stream: string;
 }
 
-interface StreamStatus {
-	success: boolean;
-	isLive: boolean;
-	viewerCount: number;
-	app: string;
-	stream: string;
-	streamInfo: any;
-}
-
 export default function RTMPStreamPage() {
 	const params = useParams();
 	const roomName = params.roomName as string;
 
 	const [roomExists, setRoomExists] = useState<boolean | null>(null);
-	const [rtmpInfo, setRtmpInfo] = useState<RTMPStreamInfo | null>(null);
-	const [streamStatus, setStreamStatus] = useState<StreamStatus | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [copied, setCopied] = useState(false);
 	const [copiedStreamKey, setCopiedStreamKey] = useState(false);
 	const [srsServerUrl, setSrsServerUrl] = useState("rtmp://127.0.0.1");
 
-	const validateRoom = async () => {
+	const validateRoom = useCallback(async () => {
 		try {
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.ROOMS.VALIDATE, {
@@ -66,16 +55,16 @@ export default function RTMPStreamPage() {
 			setRoomExists(false);
 			return false;
 		}
-	};
+	}, [roomName]);
 
-	const fetchRTMPInfo = async () => {
+	const fetchRTMPInfo = useCallback(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
 
 			const response = await fetch(
 				buildApiUrlWithParams(ENDPOINTS.RTMP.INGEST, {
-					app: "__defaultApp__",
+					app: "__pixelcast__",
 					stream: roomName,
 				})
 			);
@@ -85,7 +74,6 @@ export default function RTMPStreamPage() {
 			}
 
 			const data: RTMPStreamInfo = await response.json();
-			setRtmpInfo(data);
 
 			// Extract SRS server from the RTMP ingest URL
 			if (data.rtmpIngestUrl) {
@@ -99,43 +87,20 @@ export default function RTMPStreamPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
-
-	const fetchStreamStatus = async () => {
-		try {
-			const response = await fetch(
-				buildApiUrlWithParams(ENDPOINTS.RTMP.STATUS, {
-					app: "__defaultApp__",
-					stream: roomName,
-				})
-			);
-
-			if (response.ok) {
-				const data: StreamStatus = await response.json();
-				setStreamStatus(data);
-			}
-		} catch (err) {
-			console.error("Failed to fetch stream status:", err);
-		}
-	};
+	}, [roomName]);
 
 	useEffect(() => {
 		const initializeRoom = async () => {
 			const exists = await validateRoom();
 			if (exists) {
 				fetchRTMPInfo();
-				fetchStreamStatus();
-
-				// Poll stream status every 5 seconds
-				const interval = setInterval(fetchStreamStatus, 5000);
-				return () => clearInterval(interval);
 			} else {
 				setIsLoading(false);
 			}
 		};
 
 		initializeRoom();
-	}, [roomName]);
+	}, [roomName, validateRoom, fetchRTMPInfo]);
 
 	const copyToClipboard = async (text: string, isStreamKey = false) => {
 		try {
@@ -154,7 +119,6 @@ export default function RTMPStreamPage() {
 
 	const handleRefresh = () => {
 		fetchRTMPInfo();
-		fetchStreamStatus();
 	};
 
 	if (isLoading) {
@@ -184,7 +148,7 @@ export default function RTMPStreamPage() {
 									Room Not Found
 								</h1>
 								<p className='text-lg text-gray-600 mb-4'>
-									The RTMP room "{roomName}" does not exist.
+									The RTMP room &quot;{roomName}&quot; does not exist.
 								</p>
 								<p className='text-sm text-gray-500 mb-6'>
 									This room may have been deleted or the URL is incorrect.
@@ -259,7 +223,7 @@ export default function RTMPStreamPage() {
 							<CardContent>
 								<div className='aspect-video bg-black rounded-lg overflow-hidden'>
 									<HLSPlayer
-										app='__defaultApp__'
+										app='__pixelcast__'
 										stream={roomName}
 										className='w-full h-full'
 										autoplay={true}
@@ -377,7 +341,7 @@ export default function RTMPStreamPage() {
 						{/* RTMP Connection Monitor */}
 						<RTMPConnectionMonitor
 							roomName={roomName}
-							app='__defaultApp__'
+							app='__pixelcast__'
 							isActive={true}
 						/>
 					</div>

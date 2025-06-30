@@ -1,0 +1,5 @@
+# See https://docs.docker.com/engine/reference/builder/#dockerignore-file
+**/node_modules
+**/.next
+.git
+*.md

@@ -55,6 +55,12 @@ export interface StreamInfo {
 		recv_30s?: number;
 		send_30s?: number;
 	};
+	publisherId?: string;
+	roomName?: string;
+	viewers?: number;
+	bitrate?: number;
+	originLatency?: number;
+	edgeLatency?: number;
 }
 
 export interface SRSStreamsResponse {

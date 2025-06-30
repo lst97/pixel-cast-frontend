@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	serverExternalPackages: ["@livekit/node", "livekit-server-sdk"],
+	output: "standalone",
 	turbopack: {
 		resolveExtensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
 	},

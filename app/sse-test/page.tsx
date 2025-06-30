@@ -21,7 +21,7 @@ interface ConnectionTest {
 	name: string;
 	status: "idle" | "testing" | "success" | "error";
 	url: string;
-	result?: unknown;
+	result?: object | string | number | boolean | null;
 	error?: string;
 	duration?: number;
 }
@@ -86,7 +86,7 @@ export default function SSETestPage() {
 
 		try {
 			let response: Response;
-			let result: unknown;
+			let result: ConnectionTest["result"];
 
 			if (test.name === "Token Generation") {
 				// POST request for token generation
@@ -104,12 +104,19 @@ export default function SSETestPage() {
 			}
 
 			if (response.ok) {
-				result = await response.json();
+				result = (await response.json()) as ConnectionTest["result"];
 				const duration = Date.now() - startTime;
 
 				setConnectionTests((prev) =>
 					prev.map((t, i) =>
-						i === index ? { ...t, status: "success", result, duration } : t
+						i === index
+							? {
+									...t,
+									status: "success",
+									result: result as ConnectionTest["result"],
+									duration,
+							  }
+							: t
 					)
 				);
 			} else {
@@ -248,24 +255,24 @@ export default function SSETestPage() {
 									</div>
 
 									<div className='text-sm text-gray-600 mb-2'>
-										<code className='bg-gray-100 px-2 py-1 rounded text-xs'>
-											{test.url}
-										</code>
+										URL:{" "}
+										<code className='bg-gray-100 p-1 rounded'>{test.url}</code>
 									</div>
-
-									{test.error && (
-										<div className='text-sm text-red-600 bg-red-50 p-2 rounded'>
-											❌ {test.error}
+									{test.status === "error" && (
+										<div className='text-sm text-red-500'>
+											Error:{" "}
+											<code className='bg-red-100 p-1 rounded'>
+												{test.error}
+											</code>
 										</div>
 									)}
-
-									{test.result && (
-										<details className='text-sm'>
-											<summary className='cursor-pointer text-gray-600 hover:text-gray-800'>
-												View Response Data
-											</summary>
-											<pre className='bg-gray-100 p-2 rounded text-xs mt-2 overflow-auto max-h-40'>
-												{JSON.stringify(test.result, null, 2)}
+									{test.status === "success" && test.result && (
+										<details className='text-sm text-gray-700'>
+											<summary>Response Data</summary>
+											<pre className='mt-2 bg-gray-100 p-2 rounded max-h-40 overflow-auto'>
+												<code>
+													{JSON.stringify(test.result, null, 2) as string}
+												</code>
 											</pre>
 										</details>
 									)}
@@ -275,147 +282,116 @@ export default function SSETestPage() {
 					</CardContent>
 				</Card>
 
-				{/* SSE Stream Test Controls */}
+				{/* SSE Real-time Stream Monitoring */}
 				<Card>
 					<CardHeader>
 						<CardTitle className='flex items-center gap-2'>
 							<Radio className='h-5 w-5' />
-							Real-time Stream Updates Test
+							SSE Real-time Stream Monitoring
 						</CardTitle>
 					</CardHeader>
-					<CardContent className='space-y-4'>
-						<div>
-							<label className='block text-sm font-medium mb-2'>
-								Room Name:
-							</label>
+					<CardContent>
+						<div className='mb-4 flex items-center space-x-2'>
 							<Input
+								type='text'
+								placeholder='Enter room name'
 								value={roomName}
 								onChange={(e) => setRoomName(e.target.value)}
-								placeholder='Enter room name'
-								disabled={isActive}
+								className='max-w-xs'
 							/>
+							<Button onClick={startTest} disabled={isActive || !roomName}>
+								Start SSE
+							</Button>
+							<Button onClick={stopTest} disabled={!isActive} variant='outline'>
+								Stop SSE
+							</Button>
+							<Button
+								onClick={reconnect}
+								disabled={!isActive}
+								variant='outline'
+							>
+								Reconnect
+							</Button>
+						</div>
+						<div className='mb-4'>
+							<p className='text-sm text-gray-700'>
+								SSE Connection Status:{" "}
+								{isConnected ? (
+									<Badge className='bg-green-500'>Connected</Badge>
+								) : (
+									<Badge variant='destructive'>Disconnected</Badge>
+								)}
+							</p>
+							{error && (
+								<p className='text-sm text-red-500 mt-1'>
+									SSE Error:{" "}
+									<code className='bg-red-100 p-1 rounded'>{error}</code>
+								</p>
+							)}
 						</div>
 
-						<div className='flex gap-2'>
-							{!isActive ? (
-								<Button onClick={startTest} disabled={!roomName}>
-									Start SSE Connection
-								</Button>
-							) : (
-								<Button onClick={stopTest} variant='destructive'>
-									Stop SSE Connection
-								</Button>
-							)}
-
-							{isActive && (
-								<Button onClick={reconnect} variant='outline'>
-									Reconnect
-								</Button>
-							)}
+						<h3 className='font-semibold mb-2'>Active Streams:</h3>
+						{streams.length === 0 && (
+							<p className='text-gray-500 text-sm'>No active streams.</p>
+						)}
+						<div className='grid gap-2'>
+							{streams.map((stream) => (
+								<Card key={stream.id} className='bg-gray-50'>
+									<CardContent className='p-4'>
+										<p className='font-medium'>
+											Stream ID:{" "}
+											<code className='bg-gray-200 p-1 rounded'>
+												{stream.id}
+											</code>
+										</p>
+										<p className='text-sm text-gray-600'>
+											Publisher ID:{" "}
+											<code className='bg-gray-200 p-1 rounded'>
+												{stream.publisherId || "N/A"}
+											</code>
+										</p>
+										<p className='text-sm text-gray-600'>
+											Room Name:{" "}
+											<code className='bg-gray-200 p-1 rounded'>
+												{stream.roomName}
+											</code>
+										</p>
+										<p className='text-sm text-gray-600'>
+											Viewers:{" "}
+											<code className='bg-gray-200 p-1 rounded'>
+												{stream.viewers}
+											</code>
+										</p>
+										{stream.bitrate && (
+											<p className='text-sm text-gray-600'>
+												Bitrate:{" "}
+												<code className='bg-gray-200 p-1 rounded'>
+													{(stream.bitrate / 1000).toFixed(2)} Mbps
+												</code>
+											</p>
+										)}
+										{stream.originLatency !== undefined && (
+											<p className='text-sm text-gray-600'>
+												Origin Latency:{" "}
+												<code className='bg-gray-200 p-1 rounded'>
+													{stream.originLatency}ms
+												</code>
+											</p>
+										)}
+										{stream.edgeLatency !== undefined && (
+											<p className='text-sm text-gray-600'>
+												Edge Latency:{" "}
+												<code className='bg-gray-200 p-1 rounded'>
+													{stream.edgeLatency}ms
+												</code>
+											</p>
+										)}
+									</CardContent>
+								</Card>
+							))}
 						</div>
 					</CardContent>
 				</Card>
-
-				{/* Connection Status */}
-				{isActive && (
-					<Card>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								SSE Connection Status
-								<div
-									className={`w-3 h-3 rounded-full ${
-										isConnected
-											? "bg-green-500"
-											: error
-											? "bg-red-500"
-											: "bg-yellow-500"
-									} ${isConnected ? "animate-pulse" : ""}`}
-								/>
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className='space-y-2'>
-								<div className='flex items-center gap-2'>
-									<Badge variant={isConnected ? "default" : "destructive"}>
-										{isConnected ? "Connected" : "Disconnected"}
-									</Badge>
-									{error && <Badge variant='destructive'>Error: {error}</Badge>}
-								</div>
-								<p className='text-sm text-gray-600'>
-									Connected to room:{" "}
-									<code className='bg-gray-100 px-2 py-1 rounded'>
-										{roomName}
-									</code>
-								</p>
-							</div>
-						</CardContent>
-					</Card>
-				)}
-
-				{/* Stream Data */}
-				{isActive && (
-					<Card>
-						<CardHeader>
-							<CardTitle>
-								Real-time Stream Data ({streams.length} streams)
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							{streams.length === 0 ? (
-								<p className='text-gray-500 italic'>
-									No streams available in this room
-								</p>
-							) : (
-								<div className='space-y-3'>
-									{streams.map((stream, index) => (
-										<div
-											key={`${stream.name}-${index}`}
-											className='border rounded-lg p-4'
-										>
-											<div className='flex items-center justify-between mb-2'>
-												<h3 className='font-medium'>{stream.name}</h3>
-												<div className='flex gap-2'>
-													<Badge
-														variant={
-															stream.publish.active ? "default" : "secondary"
-														}
-													>
-														{stream.publish.active ? "Active" : "Inactive"}
-													</Badge>
-													{stream.video && (
-														<Badge variant='outline'>Video</Badge>
-													)}
-													{stream.audio && (
-														<Badge variant='outline'>Audio</Badge>
-													)}
-												</div>
-											</div>
-
-											<div className='text-sm text-gray-600 space-y-1'>
-												<div>
-													Room: <code>{stream.app}</code>
-												</div>
-												<div>
-													Stream ID: <code>{stream.id}</code>
-												</div>
-												{stream.video && (
-													<div>
-														Video Codec: <code>{stream.video.codec}</code>
-													</div>
-												)}
-												{stream.audio && (
-													<div>
-														Audio Codec: <code>{stream.audio.codec}</code>
-													</div>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				)}
 
 				{/* Environment Information */}
 				<Card>
@@ -461,13 +437,17 @@ export default function SSETestPage() {
 								<strong>System Tests:</strong>
 							</p>
 							<ol className='list-decimal list-inside space-y-1 ml-4'>
-								<li>Click "Run All Tests" to check all system connectivity</li>
+								<li>
+									Click &quot;Run All Tests&quot; to check all system
+									connectivity
+								</li>
 								<li>Green checkmarks indicate successful connections</li>
 								<li>
 									Red X marks indicate connection failures that need attention
 								</li>
 								<li>
-									Click individual "Test" buttons to recheck specific services
+									Click individual &quot;Test&quot; buttons to recheck specific
+									services
 								</li>
 							</ol>
 
@@ -475,7 +455,9 @@ export default function SSETestPage() {
 								<strong>SSE Stream Tests:</strong>
 							</p>
 							<ol className='list-decimal list-inside space-y-1 ml-4'>
-								<li>Enter a room name and click "Start SSE Connection"</li>
+								<li>
+									Enter a room name and click &quot;Start SSE Connection&quot;
+								</li>
 								<li>
 									The connection status will show if real-time updates are
 									working
